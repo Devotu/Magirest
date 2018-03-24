@@ -1,2 +1,2 @@
 # Magirest
-Magic Game Tracker REST API
+Magic Game Tracker API
