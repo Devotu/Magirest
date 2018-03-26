@@ -1,0 +1,14 @@
+conf/db.conf
+
+*.class
+*.cache
+*.lock
+*.bin
+*.gradle
+*.settings
+
+gradle*
+
+project/target/
+target/
+logs/
