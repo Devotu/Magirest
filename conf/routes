@@ -1,0 +1,9 @@
+#GET     /api/v1/decks/:id          api.v1.DeckController.getDeck(id: Int)
+#GET     /api/v1/decks              api.v1.DeckController.getDecks()
+POST    /api/v1/decks              api.v1.DeckController.createDeck()
+
+POST    /api/v1/login              api.v1.TokenController.login()
+DELETE  /api/v1/logout             api.v1.TokenController.logout()
+
+POST    /api/v1/users              api.v1.UserController.create()
+DELETE  /api/v1/users              api.v1.UserController.delete()
