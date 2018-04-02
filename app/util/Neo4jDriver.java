@@ -113,4 +113,18 @@ public class Neo4jDriver implements AutoCloseable {
             throw ex;
         }
     }
+
+    //TODO clear all types of orphans/error
+    /**
+     * Tries to remove all types of errorously created nodes and relations
+     * Currently supports:
+     * Nothing
+     * TODO Nodes without connections
+     * TODO Nodes without label
+     * TODO Nodes without id
+     */
+    public int clearErrors(){
+
+        return 0;
+    }
 }

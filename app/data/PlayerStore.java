@@ -15,8 +15,30 @@ import play.Logger;
 public class PlayerStore {
 
     //Basics
-    private static void persist(Player player, Neo4jDriver db) {
+	public static int persist(Player player, Neo4jDriver db) throws Exception {
+
+        player.id = Neo4jDriver.getUniqueId(db);
+
+        String query =  
+        "CREATE" + 
+            " (n:Player { id:$id, name:$name })" + 
+        " RETURN n";
+
+        HashMap<String, Object> params = new HashMap<>();
+
+        Logger.debug(player.id + ", " + player.name);
         
+        params.put("id", player.id);
+        params.put("name", player.name);
+
+        StatementResult result = db.runQuery(query, params);
+
+        Node n = result.single().get("n").asNode();
+
+        Logger.debug("Created player with id: " + n.get("id").asInt());
+        
+        //Return
+        return n.get("id").asInt();
     }
 
     private static int get(Token token, Neo4jDriver db) {
@@ -50,12 +72,5 @@ public class PlayerStore {
         StatementResult queryExistingResult = db.runQuery(queryExisting, params);
 
         return queryExistingResult.single().get("exist").asInt() > 0;
-    }
-
-
-    private static Player nodeToPlayer(Node node) {
-        //TODO som fancy node -> player
-        //Serialize node?
-        return new Player();
     }
 }

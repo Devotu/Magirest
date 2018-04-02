@@ -1,12 +1,9 @@
 package api.v1;
 
-import util.Responses;
-import util.Encryption;
-import util.Neo4jDriver;
-import model.User;
-import model.Player;
-import model.JsonFieldConstants;
-import api.v1.PlayerController;
+import util.*;
+import model.*;
+import data.*;
+import v1.ErrorCodes;
 
 import play.mvc.*;
 import play.Logger;
@@ -32,37 +29,7 @@ public class UserController extends Controller {
     public static String ERROR_CODE_USER_EXIST = "User name already in use.";
     public static String ERROR_CODE_PLAYER_EXIST = "Player name already in use.";
 
-    public static boolean userNameExist(String userName, Neo4jDriver db) throws Exception {
 
-        String queryExisting = "MATCH (u:User)" + " WHERE u.name = $userName" + " RETURN count(u) AS exist";
-
-        HashMap<String, Object> params = new HashMap<>();
-        params.put("userName", userName);
-
-        StatementResult queryExistingResult = db.runQuery(queryExisting, params);
-
-        return queryExistingResult.single().get("exist").asInt() > 0;
-    }
-
-    public static boolean validateCredentials(String userName, String password, Neo4jDriver db) throws Exception {
-
-        String queryExisting = 
-            "MATCH (u:User)" + 
-            " WHERE" + 
-            "   u.name = $userName AND" + 
-            "   u.password = $hashedPassword" + 
-            " RETURN count(u) AS exist";
-
-        HashMap<String, Object> params = new HashMap<>();
-        params.put("userName", userName);
-
-        String hashedPassword = Encryption.get_SHA_512(password);             
-        params.put("hashedPassword", hashedPassword);
-
-        StatementResult queryExistingResult = db.runQuery(queryExisting, params);
-
-        return queryExistingResult.single().get("exist").asInt() > 0;
-    }
 
     public static int getUserId(String userName, String password, Neo4jDriver db) throws Exception {
 
@@ -109,13 +76,13 @@ public class UserController extends Controller {
                     break creator;
                 }
 
-                if (userNameExist(userName, db)){
+                if (UserStore.userNameExist(userName, db)){
                     status = String.valueOf(HttpStatus.SC_LOCKED);
                     returnNode.put(JsonFieldConstants.PROBLEM, ERROR_CODE_USER_EXIST);
                     break creator;
                 }
 
-                if (PlayerController.playerNameExist(playerName, db)){
+                if (PlayerStore.playerNameExist(playerName, db)){
                     status = String.valueOf(HttpStatus.SC_LOCKED);
                     returnNode.put(JsonFieldConstants.PROBLEM, ERROR_CODE_PLAYER_EXIST);
                     break creator;
@@ -174,13 +141,13 @@ public class UserController extends Controller {
 
             destructor: { 
 
-                if (!userNameExist(userName, db)){
+                if (!UserStore.userNameExist(userName, db)){
                     status = String.valueOf(HttpStatus.SC_NOT_FOUND);
                     returnNode.put(JsonFieldConstants.PROBLEM, "Cannot find user.");
                     break destructor;
                 }
 
-                if (!validateCredentials(userName, password, db)){
+                if (!UserStore.validateCredentials(userName, password, db)){
                     status = String.valueOf(HttpStatus.SC_NOT_FOUND);
                     returnNode.put(JsonFieldConstants.PROBLEM, "Incorrect password.");
                     break destructor;
@@ -214,5 +181,72 @@ public class UserController extends Controller {
         }
 
         return created(Responses.createResponse(true, status, returnNode));
+    }
+
+
+    public JsonNode create(JsonNode json) {
+
+        String status = String.valueOf(HttpStatus.SC_METHOD_FAILURE);
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode returnNode = mapper.createObjectNode();
+
+        String userName = json.get("userName").textValue();
+        String password = json.get("password").textValue();
+        String playerName = json.get("playerName").textValue();
+
+        try {
+            Neo4jDriver db = new Neo4jDriver();
+
+            creator: { 
+                if (!Encryption.verifyPassword(password)){
+                    status = String.valueOf(HttpStatus.SC_LOCKED);
+                    returnNode.put(JsonFieldConstants.PROBLEM, "Password to short, minimum length is " + Encryption.PASSWORD_MIN_LENGTH + " characters.");
+                    break creator;
+                }
+
+                if ("".equals(userName)){
+                    status = String.valueOf(HttpStatus.SC_BAD_REQUEST);
+                    returnNode.put(JsonFieldConstants.PROBLEM, "userName: " + ErrorCodes.PARAMETER_EMPTY.code() + ErrorCodes.EXPECTED_STRING.code());
+                    break creator;
+                }
+
+                if (UserStore.userNameExist(userName, db)){
+                    status = String.valueOf(HttpStatus.SC_LOCKED);
+                    returnNode.put(JsonFieldConstants.PROBLEM, ERROR_CODE_USER_EXIST);
+                    break creator;
+                }
+
+                if ("".equals(playerName)){
+                    status = String.valueOf(HttpStatus.SC_BAD_REQUEST);
+                    returnNode.put(JsonFieldConstants.PROBLEM, "playerName: " + ErrorCodes.PARAMETER_EMPTY.code() + ErrorCodes.EXPECTED_STRING.code());
+                    break creator;
+                }
+
+                if (PlayerStore.playerNameExist(playerName, db)){
+                    status = String.valueOf(HttpStatus.SC_LOCKED);
+                    returnNode.put(JsonFieldConstants.PROBLEM, ERROR_CODE_PLAYER_EXIST);
+                    break creator;
+                }
+
+                User inputUser = new User(0, userName, password);
+                int userId = UserStore.persist(inputUser, db);
+                User user = UserStore.getUser(userId, db);
+
+                Player inputPlayer = new Player(0, playerName);
+                int playerId = UserStore.addIsPlayer(user, inputPlayer, db);
+
+                if (playerId != 0) {
+                    
+                    status = String.valueOf(HttpStatus.SC_OK);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            status = String.valueOf(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+        }
+
+        returnNode.put("status", status);
+
+        return returnNode;
     }
 }
