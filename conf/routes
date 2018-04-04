@@ -8,4 +8,4 @@ DELETE  /api/v1/logout             api.v1.TokenController.logout()
 POST    /api/v1/users              api.v1.UserController.create()
 DELETE  /api/v1/users              api.v1.UserController.delete()
 
-GET     /apisocket                 controllers.SocketController.jsonSocket
+GET     /api/v1/socket                 controllers.SocketController.jsonSocket

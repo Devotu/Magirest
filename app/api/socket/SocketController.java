@@ -50,7 +50,7 @@ public class SocketController extends Controller {
             } catch (Exception e) {
                 // e.printStackTrace();
                 Logger.debug("Got bad input jsonSocket");
-                return badRequestResult();
+                // return errorResult(Results.badRequest("Invalid user input"));
             }
 
             try {    
@@ -58,38 +58,21 @@ public class SocketController extends Controller {
 
                 if (UserStore.validateCredentials(userName, password, db)) {
                     Logger.debug("socket accepted");
-                    return CompletableFuture.completedFuture(
-                            F.Either.Right(ActorFlow.actorRef(JsonSocketActor::props, actorSystem, materializer)));
+                    return CompletableFuture.completedFuture(F.Either.Right(ActorFlow.actorRef(JsonSocketActor::props, actorSystem, materializer)));
                 } else {
                     Logger.debug("socket rejected");
-                    return forbiddenResult();
+                    return errorResult(Results.notFound("No such user/password found"));
                 }
             } catch (Exception e) {
                 e.printStackTrace();
-                return errorResult();
+                return errorResult(Results.internalServerError("Oops"));
             }
 
         });
     }
 
-    private CompletionStage<Either<Result, Flow<JsonNode, JsonNode, ?>>> forbiddenResult() {
-        final Result error = Results.forbidden("Forbidden");
+    private CompletionStage<Either<Result, Flow<JsonNode, JsonNode, ?>>> errorResult(Result error) {
         final Either<Result, Flow<JsonNode, JsonNode, ?>> left = Either.Left(error);
-
-        return CompletableFuture.completedFuture(left);
-    }
-
-    private CompletionStage<Either<Result, Flow<JsonNode, JsonNode, ?>>> errorResult() {
-        final Result error = Results.internalServerError("Oops");
-        final Either<Result, Flow<JsonNode, JsonNode, ?>> left = Either.Left(error);
-
-        return CompletableFuture.completedFuture(left);
-    }
-
-    private CompletionStage<Either<Result, Flow<JsonNode, JsonNode, ?>>> badRequestResult() {
-        final Result error = Results.badRequest("Invalid user input");
-        final Either<Result, Flow<JsonNode, JsonNode, ?>> left = Either.Left(error);
-
         return CompletableFuture.completedFuture(left);
     }
 }

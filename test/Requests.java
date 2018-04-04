@@ -31,7 +31,7 @@ public class Requests {
             }
 
             int respCode = conn.getResponseCode();
-            if (respCode != 200 && respCode != 201) {
+            if (respCode != 200 && respCode != 201 && respCode != 101) {
                 String error = inputStreamToString(conn.getErrorStream());
                 return error;
             }
@@ -57,7 +57,7 @@ public class Requests {
                     conn.setRequestMethod(httpMethod);
         
                     int respCode = conn.getResponseCode();
-                    if (respCode != 200 && respCode != 201) {
+                    if (respCode != 200 && respCode != 201 && respCode != 101) {
                         String error = inputStreamToString(conn.getErrorStream());
                         return error;
                     }
