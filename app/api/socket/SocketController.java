@@ -5,6 +5,7 @@ import data.*;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.*;
 
 import play.libs.streams.ActorFlow;
 import play.mvc.*;
@@ -36,22 +37,8 @@ public class SocketController extends Controller {
 
         return WebSocket.Json.acceptOrResult(request -> {
 
-            ObjectMapper mapper = new ObjectMapper();
-            ObjectNode returnNode = mapper.createObjectNode();
-
-            String userName = "";
-            String password = "";
-
-            try {
-                JsonNode json = request().body().asJson();
-                userName = json.get("userName").textValue();
-                password = json.get("password").textValue();
-
-            } catch (Exception e) {
-                // e.printStackTrace();
-                Logger.debug("Got bad input jsonSocket");
-                // return errorResult(Results.badRequest("Invalid user input"));
-            }
+            String userName = request().getQueryString("username");
+            String password = request().getQueryString("password");
 
             try {    
                 Neo4jDriver db = new Neo4jDriver();
