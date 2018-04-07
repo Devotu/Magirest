@@ -24,7 +24,7 @@
   function onOpen(evt)
   {
     writeToScreen("CONNECTED");
-    doSend("Testing connection");
+    doSend('{"action":"read", "message":"Testing"}');
   }
 
   function onClose(evt)
